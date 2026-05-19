@@ -5,6 +5,7 @@ import type {NodeKit} from '@gravity-ui/nodekit';
 import {Feature} from './components/features';
 import collections from './controllers/collections';
 import colorPalettes from './controllers/color-palettes';
+import * as embeds from './controllers/embeds';
 import entries from './controllers/entries';
 import favorites from './controllers/favorites';
 import helpers from './controllers/helpers';
@@ -86,6 +87,31 @@ export function getRoutes(_nodekit: NodeKit, options: GetRoutesOptions) {
             handler: entries.getEntryMetaController,
             authPolicy: AuthPolicy.disabled,
             private: true,
+        }),
+
+        createEmbed: makeRoute({
+            route: 'POST /v1/embeds',
+            handler: embeds.createEmbedController,
+            write: true,
+        }),
+        listEmbeds: makeRoute({
+            route: 'GET /v1/embeds',
+            handler: embeds.listEmbedsController,
+        }),
+        deleteEmbed: makeRoute({
+            route: 'DELETE /v1/embeds/:embedId',
+            handler: embeds.deleteEmbedController,
+            write: true,
+        }),
+        embeddedEntry: makeRoute({
+            route: 'GET /v1/embedded-entry',
+            handler: embeds.embeddedEntryController,
+            authPolicy: AuthPolicy.disabled,
+        }),
+        getEmbedEntry: makeRoute({
+            route: 'GET /embeds/entries/:entryId',
+            handler: embeds.getEmbedEntryByIdController,
+            authPolicy: AuthPolicy.disabled,
         }),
 
         createEntry: makeRoute({

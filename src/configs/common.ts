@@ -63,4 +63,7 @@ export default {
     },
 
     appValidationErrorHandler,
+    /** TTL (seconds) for private embed JWT. 0 = no exp claim */
+    embedTokenTTL: Number(process.env.EMBED_TOKEN_TTL ?? 60 * 60 * 24 * 30),
+    embedTokenAlgorithm: (process.env.EMBED_TOKEN_ALGORITHM as 'HS256') || 'HS256',
 } as Partial<AppConfig>;

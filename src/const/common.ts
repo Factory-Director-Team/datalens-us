@@ -169,6 +169,9 @@ export const AJV_PATTERN_KEYS_NOT_OBJECT = {
 
 export const COOKIE_HEADER = 'cookie';
 export const AUTHORIZATION_HEADER = 'authorization';
+
+/** Same name as datalens-ui DL_EMBED_TOKEN_HEADER */
+export const DL_EMBED_TOKEN_HEADER = 'x-dl-embed-token';
 export const DL_AUTH_HEADER_KEY = 'bearer';
 
 export const US_MASTER_TOKEN_HEADER = 'x-us-master-token';

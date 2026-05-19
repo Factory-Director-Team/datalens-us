@@ -9,6 +9,7 @@ const selectedEmbedColumns = [
     EmbedModelColumn.Title,
     EmbedModelColumn.EmbeddingSecretId,
     EmbedModelColumn.EntryId,
+    EmbedModelColumn.TenantId,
     EmbedModelColumn.DepsIds,
     EmbedModelColumn.UnsignedParams,
     EmbedModelColumn.PrivateParams,
@@ -22,7 +23,10 @@ const selectedEmbedColumns = [
     EmbedModelColumn.Settings,
 ] as const;
 
-const selectedEmbeddingSecretsColumns = [EmbeddingSecretModelColumn.PublicKey] as const;
+const selectedEmbeddingSecretsColumns = [
+    EmbeddingSecretModelColumn.PublicKey,
+    EmbeddingSecretModelColumn.WorkbookId,
+] as const;
 
 const selectedEmbedEmbeddingSecretColumns = [
     ...selectedEmbedColumns.map((col) => `${EmbedModel.tableName}.${col}`),

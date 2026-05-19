@@ -478,6 +478,40 @@ export default (error: AppError | DBError) => {
             };
         }
 
+        case US_ERRORS.EMBED_TOKEN_EXPIRED: {
+            return {
+                code: 401,
+                response: {
+                    code,
+                    message: message ?? 'Embed token expired',
+                    details,
+                },
+            };
+        }
+
+        case US_ERRORS.EMBED_TOKEN_INVALID: {
+            return {
+                code: 400,
+                response: {
+                    code,
+                    message: message ?? 'Invalid embed token',
+                    details,
+                },
+            };
+        }
+
+        case 'INCORRECT_ENTRY_ID_FOR_EMBED':
+        case 'INCORRECT_DEPS_IDS_FOR_EMBED': {
+            return {
+                code: 403,
+                response: {
+                    code,
+                    message: message ?? 'Access denied for embedded entry',
+                    details,
+                },
+            };
+        }
+
         case US_ERRORS.PRIVATE_ROUTE_ONLY: {
             return {
                 code: 500,
