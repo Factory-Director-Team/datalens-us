@@ -18,6 +18,11 @@ export interface PlatformAppConfig {
 
     masterToken: string[];
 
+    // Stack crypto key (CONTROL_API_CRYPTO_KEY) used to encrypt secret material at rest — currently
+    // the Embedding secret's RS256 private key (ADR 0003). Absent when the operator has not wired it,
+    // in which case creating an Embedding secret fails fast.
+    cryptoKey?: string;
+
     // auth
     authMethods?: string[];
     authTokenPublicKey?: string;

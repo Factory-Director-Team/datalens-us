@@ -7,6 +7,10 @@ export const EmbeddingSecretModelColumn = {
     WorkbookId: 'workbookId',
     TenantId: 'tenantId',
     PublicKey: 'publicKey',
+    // Serialized ciphertext of the RS256 private key, encrypted at rest with the stack crypto key
+    // (ADR 0003). Never returned in plaintext by any read endpoint. Nullable: upstream/subscription
+    // secrets carry only a public key.
+    PrivateKey: 'privateKey',
     Type: 'type',
     CreatedBy: 'createdBy',
     CreatedAt: 'createdAt',
@@ -26,6 +30,7 @@ export class EmbeddingSecretModel extends Model {
     [EmbeddingSecretModelColumn.WorkbookId]!: string;
     [EmbeddingSecretModelColumn.TenantId]!: string;
     [EmbeddingSecretModelColumn.PublicKey]!: string;
+    [EmbeddingSecretModelColumn.PrivateKey]!: Nullable<string>;
     [EmbeddingSecretModelColumn.Type]!: Nullable<EmbeddingType>;
     [EmbeddingSecretModelColumn.CreatedBy]!: string;
     [EmbeddingSecretModelColumn.CreatedAt]!: string;

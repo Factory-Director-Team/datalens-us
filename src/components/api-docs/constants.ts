@@ -16,4 +16,5 @@ export enum ApiTag {
     Structure = 'Structure',
     Tenants = 'Tenants',
     Permissions = 'Permissions',
+    Embeds = 'Embeds',
 }

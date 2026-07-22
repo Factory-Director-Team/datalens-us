@@ -6,6 +6,7 @@ import {Feature} from './components/features';
 import {PrivateRouteTag} from './const';
 import collections from './controllers/collections';
 import colorPalettes from './controllers/color-palettes';
+import embeddingSecrets from './controllers/embedding-secrets';
 import entries from './controllers/entries';
 import favorites from './controllers/favorites';
 import homeController from './controllers/home';
@@ -146,6 +147,19 @@ export function getRoutes(_nodekit: NodeKit, options: GetRoutesOptions) {
             authPolicy: AuthPolicy.disabled,
             private: true,
             write: true,
+        }),
+
+        // Workbook Embedding secret (RS256 key pair). Create is restricted to workbook editors and
+        // above; both edit rights and at-rest encryption of the private key are handled in the service
+        // (ADR 0003).
+        createEmbeddingSecret: makeRoute({
+            route: 'POST /v1/embedding-secrets',
+            handler: embeddingSecrets.createEmbeddingSecretController,
+            write: true,
+        }),
+        getEmbeddingSecret: makeRoute({
+            route: 'GET /v1/embedding-secrets/:embeddingSecretId',
+            handler: embeddingSecrets.getEmbeddingSecretController,
         }),
 
         deleteEntry: makeRoute({

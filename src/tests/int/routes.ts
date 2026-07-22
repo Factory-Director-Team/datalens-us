@@ -40,4 +40,6 @@ export const routes = {
     switchRevision: (entryId: string) => `/private/entries/${entryId}/switch-revision`,
     copyEntryToWorkbook: (entryId: string) => `/v2/entries/${entryId}/copy`,
     copyEntriesToWorkbook: '/v2/copy-entries',
+    embeddingSecrets: '/v1/embedding-secrets',
+    embeddingSecret: (embeddingSecretId: string) => `/v1/embedding-secrets/${embeddingSecretId}`,
 } as const;
