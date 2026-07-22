@@ -1,16 +1,8 @@
-import {encryptString, generateRs256KeyPair} from '../../../components/crypto';
-import {CryptoKeyMissingError} from '../../../components/errors';
-import {DEFAULT_QUERY_TIMEOUT} from '../../../const';
-import {
-    EmbeddingSecretModel,
-    EmbeddingSecretModelColumn,
-} from '../../../db/models/new/embedding-secret';
-import {WorkbookPermission} from '../../../entities/workbook';
 import Utils from '../../../utils';
-import {getParentIds} from '../collection/utils';
 import {ServiceArgs} from '../types';
 import {getPrimary} from '../utils';
-import {getWorkbook} from '../workbook';
+
+import {checkWorkbookEmbedPermission, mintEmbeddingSecret} from './utils';
 
 const DEFAULT_TITLE = 'Embedding secret';
 
@@ -29,54 +21,11 @@ export const createEmbeddingSecret = async (
 ) => {
     ctx.log('CREATE_EMBEDDING_SECRET_START', {workbookId: Utils.encodeId(workbookId)});
 
-    const {
-        user: {userId},
-        tenantId,
-    } = ctx.get('info');
-    const {accessServiceEnabled, cryptoKey} = ctx.config;
-
-    if (!cryptoKey) {
-        // Fail before generating a key we could not store safely.
-        throw new CryptoKeyMissingError();
-    }
-
     const targetTrx = getPrimary(trx);
 
-    const workbook = await getWorkbook(
-        {ctx, trx: targetTrx, skipValidation: true, skipCheckPermissions: true},
-        {workbookId},
-    );
+    await checkWorkbookEmbedPermission({ctx, trx: targetTrx}, {workbookId});
 
-    if (accessServiceEnabled) {
-        let parentIds: string[] = [];
-
-        if (workbook.model.collectionId !== null) {
-            parentIds = await getParentIds({
-                ctx,
-                trx: targetTrx,
-                collectionId: workbook.model.collectionId,
-            });
-        }
-
-        await workbook.checkPermission({
-            parentIds,
-            permission: WorkbookPermission.Embed,
-        });
-    }
-
-    const {publicKey, privateKey} = generateRs256KeyPair();
-
-    const model = await EmbeddingSecretModel.query(targetTrx)
-        .insert({
-            [EmbeddingSecretModelColumn.Title]: title,
-            [EmbeddingSecretModelColumn.WorkbookId]: workbookId,
-            [EmbeddingSecretModelColumn.TenantId]: tenantId,
-            [EmbeddingSecretModelColumn.PublicKey]: publicKey,
-            [EmbeddingSecretModelColumn.PrivateKey]: encryptString(privateKey, cryptoKey),
-            [EmbeddingSecretModelColumn.CreatedBy]: userId,
-        })
-        .returning('*')
-        .timeout(DEFAULT_QUERY_TIMEOUT);
+    const model = await mintEmbeddingSecret({ctx, trx: targetTrx}, {workbookId, title});
 
     ctx.log('CREATE_EMBEDDING_SECRET_SUCCESS', {
         embeddingSecretId: Utils.encodeId(model.embeddingSecretId),

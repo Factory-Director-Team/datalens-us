@@ -3,6 +3,7 @@ export * from './access';
 export * from './collections';
 export * from './color-palettes';
 export * from './embedding-secrets';
+export * from './embeds';
 export * from './private-routes';
 export * from './common';
 export * from './entries';

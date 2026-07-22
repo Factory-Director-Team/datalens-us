@@ -7,6 +7,7 @@ import {PrivateRouteTag} from './const';
 import collections from './controllers/collections';
 import colorPalettes from './controllers/color-palettes';
 import embeddingSecrets from './controllers/embedding-secrets';
+import embeds from './controllers/embeds';
 import entries from './controllers/entries';
 import favorites from './controllers/favorites';
 import homeController from './controllers/home';
@@ -160,6 +161,25 @@ export function getRoutes(_nodekit: NodeKit, options: GetRoutesOptions) {
         getEmbeddingSecret: makeRoute({
             route: 'GET /v1/embedding-secrets/:embeddingSecretId',
             handler: embeddingSecrets.getEmbeddingSecretController,
+        }),
+
+        // Create an Embed for a chart. Editor rights are enforced in the service; creating an Embed
+        // keeps the object private (ticket 04).
+        createEmbed: makeRoute({
+            route: 'POST /v1/embeds',
+            handler: embeds.createEmbedController,
+            write: true,
+        }),
+
+        // Anonymous embedded-entry read. Called by the UI gateway for an unauthenticated viewer; the
+        // Embed token in the `x-dl-embed-token` header is the capability, verified authoritatively in
+        // the service (ADR 0002, 0003).
+        privateGetEmbeddedEntry: makeRoute({
+            route: 'GET /private/embedded-entry',
+            handler: embeds.getEmbeddedEntryController,
+            authPolicy: AuthPolicy.disabled,
+            private: true,
+            privateTags: [PrivateRouteTag.EntriesCrud],
         }),
 
         deleteEntry: makeRoute({

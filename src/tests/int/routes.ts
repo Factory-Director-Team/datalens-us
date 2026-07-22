@@ -42,4 +42,6 @@ export const routes = {
     copyEntriesToWorkbook: '/v2/copy-entries',
     embeddingSecrets: '/v1/embedding-secrets',
     embeddingSecret: (embeddingSecretId: string) => `/v1/embedding-secrets/${embeddingSecretId}`,
+    embeds: '/v1/embeds',
+    embeddedEntry: '/private/embedded-entry',
 } as const;

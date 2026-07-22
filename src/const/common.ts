@@ -176,6 +176,9 @@ export const US_DYNAMIC_MASTER_TOKEN_HEADER = 'x-us-dynamic-master-token';
 export const DL_COMPONENT_HEADER = 'x-dl-component';
 export const DL_WORKBOOK_ID_HEADER = 'x-dl-workbookid';
 export const DL_DATASET_ID_HEADER = 'x-dl-datasetid';
+// Carries an Embed token on the anonymous embedded-entry read (ticket 04). Mirrors the UI gateway's
+// `DL_EMBED_TOKEN_HEADER` (shared/constants/header.ts) so the BFF can forward the token verbatim.
+export const DL_EMBED_TOKEN_HEADER = 'x-dl-embed-token';
 
 export const COMPARISON_OPERATORS: {[key: string]: string} = {
     eq: '=',
