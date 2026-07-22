@@ -5,6 +5,7 @@ import {CryptoKeyMissingError, NotExistEntryError} from '../../../components/err
 import {DEFAULT_QUERY_TIMEOUT} from '../../../const';
 import {EmbedModel, EmbedModelColumn} from '../../../db/models/new/embed';
 import {Entry, EntryColumn} from '../../../db/models/new/entry';
+import {EntryScope} from '../../../db/models/new/entry/types';
 import Utils from '../../../utils';
 import {checkWorkbookEmbedPermission} from '../embedding-secret/utils';
 import {ServiceArgs} from '../types';
@@ -69,7 +70,7 @@ export const createEmbed = async (
     const targetTrx = getPrimary(trx);
 
     const entry = await Entry.query(targetTrx)
-        .select([EntryColumn.WorkbookId])
+        .select([EntryColumn.WorkbookId, EntryColumn.Scope])
         .where({
             [EntryColumn.EntryId]: entryId,
             [EntryColumn.IsDeleted]: false,
@@ -78,11 +79,16 @@ export const createEmbed = async (
         .timeout(DEFAULT_QUERY_TIMEOUT);
 
     if (!entry || !entry.workbookId) {
-        // Only workbook charts can be embedded in this slice; a missing (or non-workbook) entry fails.
+        // Only workbook objects can be embedded; a missing (or non-workbook) entry fails.
         throw new NotExistEntryError();
     }
 
     const {workbookId} = entry;
+
+    // A dashboard Embed serves all of the dashboard's dependent charts by default (allowAllDeps, ticket
+    // 05 / spec): the dependent charts are not themselves embedded, so this flag is what later authorizes
+    // resolving them by id under this token. A chart Embed serves only its own object (allowAllDeps off).
+    const allowAllDeps = entry.scope === EntryScope.Dash;
 
     // Enforce "editors and above" up front, before any key material is created or reused.
     await checkWorkbookEmbedPermission({ctx, trx: targetTrx}, {workbookId});
@@ -95,6 +101,7 @@ export const createEmbed = async (
             [EmbedModelColumn.EmbeddingSecretId]: embeddingSecret.embeddingSecretId,
             [EmbedModelColumn.EntryId]: entryId,
             [EmbedModelColumn.TenantId]: tenantId,
+            [EmbedModelColumn.AllowAllDeps]: allowAllDeps,
             [EmbedModelColumn.DepsIds]: depsIds,
             [EmbedModelColumn.UnsignedParams]: unsignedParams,
             [EmbedModelColumn.PrivateParams]: privateParams,

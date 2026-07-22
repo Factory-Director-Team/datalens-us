@@ -44,4 +44,5 @@ export const routes = {
     embeddingSecret: (embeddingSecretId: string) => `/v1/embedding-secrets/${embeddingSecretId}`,
     embeds: '/v1/embeds',
     embeddedEntry: '/private/embedded-entry',
+    embeddedDependency: (entryId: string) => `/private/embedded-entry/${entryId}`,
 } as const;

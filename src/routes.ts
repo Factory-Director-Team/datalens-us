@@ -182,6 +182,17 @@ export function getRoutes(_nodekit: NodeKit, options: GetRoutesOptions) {
             privateTags: [PrivateRouteTag.EntriesCrud],
         }),
 
+        // Anonymous read of a dependent entry (chart) of an embedded dashboard (ticket 05). Same Embed
+        // token in the `x-dl-embed-token` header plus the dependent entry's id in the path; US verifies
+        // the token and authorizes the entry as a dependency of the embed's dashboard (ADR 0002, 0003).
+        privateGetEmbeddedDependency: makeRoute({
+            route: 'GET /private/embedded-entry/:entryId',
+            handler: embeds.getEmbeddedDependencyController,
+            authPolicy: AuthPolicy.disabled,
+            private: true,
+            privateTags: [PrivateRouteTag.EntriesCrud],
+        }),
+
         deleteEntry: makeRoute({
             route: 'DELETE /v1/entries/:entryId',
             handler: entries.deleteEntryController,
