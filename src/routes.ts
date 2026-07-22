@@ -68,6 +68,16 @@ export function getRoutes(_nodekit: NodeKit, options: GetRoutesOptions) {
             handler: entries.getEntryAccessDescriptionController,
         }),
 
+        // Anonymous public-link read. Called by the UI gateway on behalf of an unauthenticated
+        // viewer; forces onlyPublic so only public entries can be returned (ADR 0002).
+        privateGetPublicEntry: makeRoute({
+            route: 'GET /private/public-entries/:entryId',
+            handler: entries.getPublicEntryController,
+            authPolicy: AuthPolicy.disabled,
+            private: true,
+            privateTags: [PrivateRouteTag.EntriesCrud],
+        }),
+
         createEntry: makeRoute({
             route: 'POST /v1/entries',
             handler: entries.createEntryController,
@@ -120,6 +130,14 @@ export function getRoutes(_nodekit: NodeKit, options: GetRoutesOptions) {
         renameEntry: makeRoute({
             route: 'POST /v1/entries/:entryId/rename',
             handler: entries.renameEntryController,
+            write: true,
+        }),
+
+        // Publish / unpublish a chart or dashboard (sets entry.public). Edit rights enforced in the
+        // service (ADR 0002).
+        switchEntryPublicationStatus: makeRoute({
+            route: 'POST /v1/entries/:entryId/publication',
+            handler: entries.switchPublicationStatusController,
             write: true,
         }),
         privateRenameEntry: makeRoute({

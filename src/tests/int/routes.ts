@@ -2,6 +2,7 @@ export const routes = {
     entries: '/v1/entries',
     getEntries: '/v1/get-entries',
     privateEntries: '/private/entries',
+    publicEntries: (entryId: string) => `/private/public-entries/${entryId}`,
     privateGetEntries: '/private/v1/get-entries',
     favorites: '/v1/favorites',
     states: '/v1/states',

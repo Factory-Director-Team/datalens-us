@@ -2,7 +2,9 @@ import {AppContext} from '@gravity-ui/nodekit';
 import {TransactionOrKnex} from 'objection';
 
 import {AccessServicePermissionDeniedError} from '../../../../components/errors';
-import {Entry as EntryModel} from '../../../../db/models/new/entry';
+import {Entry as EntryModel, EntryColumn} from '../../../../db/models/new/entry';
+import {EntryScope} from '../../../../db/models/new/entry/types';
+import {Link, LinkColumn} from '../../../../db/models/new/link';
 import {WorkbookModel} from '../../../../db/models/new/workbook';
 import {WorkbookPermission} from '../../../../entities/workbook';
 import {getParentIds} from '../../collection/utils';
@@ -78,6 +80,47 @@ export const checkWorkbookEntry = async ({
     }
 
     return undefined;
+};
+
+// Authorizes an anonymous read of a dependent CHART when it is referenced by a PUBLIC dashboard. A chart
+// inside a public dashboard is not itself flagged public, so the public-read path authorizes it via the
+// links graph: the entry must be a `toId` of the dashboard (`fromId`), the `fromId` must be a public,
+// non-deleted `dash`, and the `toId` (the entry being read) must itself be a `widget` (chart). The two
+// scope checks keep exposure to exactly "a dashboard's dependent charts": a public *chart* cannot unlock
+// what it links to, and a dashboard cannot unlock a non-chart it links to (e.g. a selector's dataset).
+// Fails closed — any missing/mismatching row yields false, so only genuine chart dependencies of a
+// genuinely public dashboard pass. Both ids are decoded (as stored in `links`). See ADR 0002 / ticket 03.
+export const checkPublicDashDependency = async ({
+    trx,
+    entryId,
+    publicDashId,
+}: {
+    trx?: TransactionOrKnex;
+    entryId: string;
+    publicDashId: string;
+}): Promise<boolean> => {
+    const dependency = await Link.query(getReplica(trx))
+        .join(
+            `${EntryModel.tableName} as dash`,
+            `dash.${EntryColumn.EntryId}`,
+            `${Link.tableName}.${LinkColumn.FromId}`,
+        )
+        .join(
+            `${EntryModel.tableName} as dep`,
+            `dep.${EntryColumn.EntryId}`,
+            `${Link.tableName}.${LinkColumn.ToId}`,
+        )
+        .where(`${Link.tableName}.${LinkColumn.FromId}`, publicDashId)
+        .andWhere(`${Link.tableName}.${LinkColumn.ToId}`, entryId)
+        .andWhere(`dash.${EntryColumn.Public}`, true)
+        .andWhere(`dash.${EntryColumn.Scope}`, EntryScope.Dash)
+        .andWhere(`dash.${EntryColumn.IsDeleted}`, false)
+        .andWhere(`dep.${EntryColumn.Scope}`, EntryScope.Widget)
+        .andWhere(`dep.${EntryColumn.IsDeleted}`, false)
+        .first()
+        .timeout(ENTRY_QUERY_TIMEOUT);
+
+    return Boolean(dependency);
 };
 
 export const checkCollectionEntry = async ({
