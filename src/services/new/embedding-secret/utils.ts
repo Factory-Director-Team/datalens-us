@@ -1,3 +1,5 @@
+import {TransactionOrKnex} from 'objection';
+
 import {encryptString, generateRs256KeyPair} from '../../../components/crypto';
 import {CryptoKeyMissingError} from '../../../components/errors';
 import {DEFAULT_QUERY_TIMEOUT} from '../../../const';
@@ -10,6 +12,26 @@ import {getParentIds} from '../collection/utils';
 import {ServiceArgs} from '../types';
 import {getPrimary} from '../utils';
 import {getWorkbook} from '../workbook';
+
+// Default title given to a DataLens-issued Embedding secret when a caller does not supply one. Shared so
+// the lazy get-or-create, the explicit create, and rotation all name a fresh secret identically.
+export const DEFAULT_EMBEDDING_SECRET_TITLE = 'Embedding secret';
+
+// Finds the workbook's DataLens-issued Embedding secret — the one whose private key we hold (Type null,
+// private key present). Upstream/subscription secrets carry only a public key and are never returned, so
+// they are never signed with or rotated. Newest wins; returns undefined when the workbook has no DataLens
+// secret yet. Shared by the lazy get-or-create (which mints one when absent) and rotation (which requires
+// an existing one).
+export const getWorkbookDataLensSecret = (trx: TransactionOrKnex, workbookId: string) =>
+    EmbeddingSecretModel.query(trx)
+        .where({
+            [EmbeddingSecretModelColumn.WorkbookId]: workbookId,
+            [EmbeddingSecretModelColumn.Type]: null,
+        })
+        .whereNotNull(EmbeddingSecretModelColumn.PrivateKey)
+        .orderBy(EmbeddingSecretModelColumn.CreatedAt, 'desc')
+        .first()
+        .timeout(DEFAULT_QUERY_TIMEOUT);
 
 // Enforces "editors and above" for creating embedding key material — both the Embedding secret itself
 // (ticket 02) and an Embed (ticket 04) gate on the same workbook Embed permission. In opensource the

@@ -2,9 +2,11 @@ import Utils from '../../../utils';
 import {ServiceArgs} from '../types';
 import {getPrimary} from '../utils';
 
-import {checkWorkbookEmbedPermission, mintEmbeddingSecret} from './utils';
-
-const DEFAULT_TITLE = 'Embedding secret';
+import {
+    DEFAULT_EMBEDDING_SECRET_TITLE,
+    checkWorkbookEmbedPermission,
+    mintEmbeddingSecret,
+} from './utils';
 
 export interface CreateEmbeddingSecretArgs {
     workbookId: string;
@@ -17,7 +19,7 @@ export interface CreateEmbeddingSecretArgs {
 // access model grants to editors and above; viewers cannot create one (spec: "editors and above").
 export const createEmbeddingSecret = async (
     {ctx, trx}: ServiceArgs,
-    {workbookId, title = DEFAULT_TITLE}: CreateEmbeddingSecretArgs,
+    {workbookId, title = DEFAULT_EMBEDDING_SECRET_TITLE}: CreateEmbeddingSecretArgs,
 ) => {
     ctx.log('CREATE_EMBEDDING_SECRET_START', {workbookId: Utils.encodeId(workbookId)});
 

@@ -42,7 +42,9 @@ export const routes = {
     copyEntriesToWorkbook: '/v2/copy-entries',
     embeddingSecrets: '/v1/embedding-secrets',
     embeddingSecret: (embeddingSecretId: string) => `/v1/embedding-secrets/${embeddingSecretId}`,
+    rotateEmbeddingSecret: '/v1/embedding-secrets/rotate',
     embeds: '/v1/embeds',
+    embed: (embedId: string) => `/v1/embeds/${embedId}`,
     embeddedEntry: '/private/embedded-entry',
     embeddedDependency: (entryId: string) => `/private/embedded-entry/${entryId}`,
 } as const;

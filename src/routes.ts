@@ -162,12 +162,32 @@ export function getRoutes(_nodekit: NodeKit, options: GetRoutesOptions) {
             route: 'GET /v1/embedding-secrets/:embeddingSecretId',
             handler: embeddingSecrets.getEmbeddingSecretController,
         }),
+        // Rotate a workbook's Embedding secret to invalidate every existing Embed at once (ticket 06).
+        // Restricted to workbook editors and above; the key material is regenerated in the service.
+        rotateEmbeddingSecret: makeRoute({
+            route: 'POST /v1/embedding-secrets/rotate',
+            handler: embeddingSecrets.rotateEmbeddingSecretController,
+            write: true,
+        }),
 
         // Create an Embed for a chart. Editor rights are enforced in the service; creating an Embed
         // keeps the object private (ticket 04).
         createEmbed: makeRoute({
             route: 'POST /v1/embeds',
             handler: embeds.createEmbedController,
+            write: true,
+        }),
+
+        // List the Embeds that exist for an object, and delete (revoke) one (ticket 06). Both are
+        // restricted to workbook editors and above in the service. Deleting an Embed makes its token
+        // fail closed at the anonymous resolve (ADR 0003 — revocation is by deleting the Embed).
+        listEmbeds: makeRoute({
+            route: 'GET /v1/embeds',
+            handler: embeds.listEmbedsController,
+        }),
+        deleteEmbed: makeRoute({
+            route: 'DELETE /v1/embeds/:embedId',
+            handler: embeds.deleteEmbedController,
             write: true,
         }),
 

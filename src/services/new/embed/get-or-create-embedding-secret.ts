@@ -1,13 +1,10 @@
-import {DEFAULT_QUERY_TIMEOUT} from '../../../const';
 import {
-    EmbeddingSecretModel,
-    EmbeddingSecretModelColumn,
-} from '../../../db/models/new/embedding-secret';
-import {mintEmbeddingSecret} from '../embedding-secret/utils';
+    DEFAULT_EMBEDDING_SECRET_TITLE,
+    getWorkbookDataLensSecret,
+    mintEmbeddingSecret,
+} from '../embedding-secret/utils';
 import {ServiceArgs} from '../types';
 import {getPrimary} from '../utils';
-
-const DEFAULT_TITLE = 'Embedding secret';
 
 export interface GetOrCreateEmbeddingSecretArgs {
     workbookId: string;
@@ -23,19 +20,14 @@ export const getOrCreateEmbeddingSecret = async (
 ) => {
     const targetTrx = getPrimary(trx);
 
-    const existing = await EmbeddingSecretModel.query(targetTrx)
-        .where({
-            [EmbeddingSecretModelColumn.WorkbookId]: workbookId,
-            [EmbeddingSecretModelColumn.Type]: null,
-        })
-        .whereNotNull(EmbeddingSecretModelColumn.PrivateKey)
-        .orderBy(EmbeddingSecretModelColumn.CreatedAt, 'desc')
-        .first()
-        .timeout(DEFAULT_QUERY_TIMEOUT);
+    const existing = await getWorkbookDataLensSecret(targetTrx, workbookId);
 
     if (existing) {
         return existing;
     }
 
-    return mintEmbeddingSecret({ctx, trx: targetTrx}, {workbookId, title: DEFAULT_TITLE});
+    return mintEmbeddingSecret(
+        {ctx, trx: targetTrx},
+        {workbookId, title: DEFAULT_EMBEDDING_SECRET_TITLE},
+    );
 };
