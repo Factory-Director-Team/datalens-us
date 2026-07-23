@@ -11,9 +11,11 @@ import {getEntriesRelationsController} from './get-entries-relations';
 import {getEntryController} from './get-entry';
 import {getEntryAccessDescriptionController} from './get-entry-access-description';
 import {getEntryMetaController} from './get-entry-meta';
+import {getPublicEntryController} from './get-public-entry';
 import {getRelationsController} from './get-relations';
 import {getRevisionsController} from './get-revisions';
 import {renameEntryController} from './rename-entry';
+import {switchPublicationStatusController} from './switch-publication-status';
 import {switchRevisionEntryController} from './switch-revision-entry';
 import {updateEntryController} from './update-entry';
 import {updateEntryUnversionedDataPrivateController} from './update-entry-unversioned-data-private';
@@ -39,4 +41,6 @@ export default {
     getRelationsController,
     getEntryMetaController,
     getEntryAccessDescriptionController,
+    getPublicEntryController,
+    switchPublicationStatusController,
 };

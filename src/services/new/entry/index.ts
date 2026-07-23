@@ -7,4 +7,5 @@ export * from './get-entry-meta';
 export * from './get-joined-entries-revisions-by-ids';
 export * from './get-entry';
 export * from './get-entries-relations';
+export * from './switch-publication-status';
 export * from './update-entry-unversioned-data-private';

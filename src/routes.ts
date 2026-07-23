@@ -6,6 +6,8 @@ import {Feature} from './components/features';
 import {PrivateRouteTag} from './const';
 import collections from './controllers/collections';
 import colorPalettes from './controllers/color-palettes';
+import embeddingSecrets from './controllers/embedding-secrets';
+import embeds from './controllers/embeds';
 import entries from './controllers/entries';
 import favorites from './controllers/favorites';
 import homeController from './controllers/home';
@@ -68,6 +70,16 @@ export function getRoutes(_nodekit: NodeKit, options: GetRoutesOptions) {
             handler: entries.getEntryAccessDescriptionController,
         }),
 
+        // Anonymous public-link read. Called by the UI gateway on behalf of an unauthenticated
+        // viewer; forces onlyPublic so only public entries can be returned (ADR 0002).
+        privateGetPublicEntry: makeRoute({
+            route: 'GET /private/public-entries/:entryId',
+            handler: entries.getPublicEntryController,
+            authPolicy: AuthPolicy.disabled,
+            private: true,
+            privateTags: [PrivateRouteTag.EntriesCrud],
+        }),
+
         createEntry: makeRoute({
             route: 'POST /v1/entries',
             handler: entries.createEntryController,
@@ -122,12 +134,83 @@ export function getRoutes(_nodekit: NodeKit, options: GetRoutesOptions) {
             handler: entries.renameEntryController,
             write: true,
         }),
+
+        // Publish / unpublish a chart or dashboard (sets entry.public). Edit rights enforced in the
+        // service (ADR 0002).
+        switchEntryPublicationStatus: makeRoute({
+            route: 'POST /v1/entries/:entryId/publication',
+            handler: entries.switchPublicationStatusController,
+            write: true,
+        }),
         privateRenameEntry: makeRoute({
             route: 'POST /private/entries/:entryId/rename',
             handler: entries.renameEntryController,
             authPolicy: AuthPolicy.disabled,
             private: true,
             write: true,
+        }),
+
+        // Workbook Embedding secret (RS256 key pair). Create is restricted to workbook editors and
+        // above; both edit rights and at-rest encryption of the private key are handled in the service
+        // (ADR 0003).
+        createEmbeddingSecret: makeRoute({
+            route: 'POST /v1/embedding-secrets',
+            handler: embeddingSecrets.createEmbeddingSecretController,
+            write: true,
+        }),
+        getEmbeddingSecret: makeRoute({
+            route: 'GET /v1/embedding-secrets/:embeddingSecretId',
+            handler: embeddingSecrets.getEmbeddingSecretController,
+        }),
+        // Rotate a workbook's Embedding secret to invalidate every existing Embed at once (ticket 06).
+        // Restricted to workbook editors and above; the key material is regenerated in the service.
+        rotateEmbeddingSecret: makeRoute({
+            route: 'POST /v1/embedding-secrets/rotate',
+            handler: embeddingSecrets.rotateEmbeddingSecretController,
+            write: true,
+        }),
+
+        // Create an Embed for a chart. Editor rights are enforced in the service; creating an Embed
+        // keeps the object private (ticket 04).
+        createEmbed: makeRoute({
+            route: 'POST /v1/embeds',
+            handler: embeds.createEmbedController,
+            write: true,
+        }),
+
+        // List the Embeds that exist for an object, and delete (revoke) one (ticket 06). Both are
+        // restricted to workbook editors and above in the service. Deleting an Embed makes its token
+        // fail closed at the anonymous resolve (ADR 0003 — revocation is by deleting the Embed).
+        listEmbeds: makeRoute({
+            route: 'GET /v1/embeds',
+            handler: embeds.listEmbedsController,
+        }),
+        deleteEmbed: makeRoute({
+            route: 'DELETE /v1/embeds/:embedId',
+            handler: embeds.deleteEmbedController,
+            write: true,
+        }),
+
+        // Anonymous embedded-entry read. Called by the UI gateway for an unauthenticated viewer; the
+        // Embed token in the `x-dl-embed-token` header is the capability, verified authoritatively in
+        // the service (ADR 0002, 0003).
+        privateGetEmbeddedEntry: makeRoute({
+            route: 'GET /private/embedded-entry',
+            handler: embeds.getEmbeddedEntryController,
+            authPolicy: AuthPolicy.disabled,
+            private: true,
+            privateTags: [PrivateRouteTag.EntriesCrud],
+        }),
+
+        // Anonymous read of a dependent entry (chart) of an embedded dashboard (ticket 05). Same Embed
+        // token in the `x-dl-embed-token` header plus the dependent entry's id in the path; US verifies
+        // the token and authorizes the entry as a dependency of the embed's dashboard (ADR 0002, 0003).
+        privateGetEmbeddedDependency: makeRoute({
+            route: 'GET /private/embedded-entry/:entryId',
+            handler: embeds.getEmbeddedDependencyController,
+            authPolicy: AuthPolicy.disabled,
+            private: true,
+            privateTags: [PrivateRouteTag.EntriesCrud],
         }),
 
         deleteEntry: makeRoute({

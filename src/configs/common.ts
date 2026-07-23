@@ -40,6 +40,10 @@ export default {
 
     masterToken: getEnvTokenVariable('MASTER_TOKEN'),
 
+    // Reuse the stack crypto key that already protects connection secrets, so the operator manages one
+    // secret, not a new one (spec US 28). Used to encrypt the Embedding secret's private key at rest.
+    cryptoKey: getEnvVariable('CONTROL_API_CRYPTO_KEY'),
+
     features: {},
 
     debug: isTrueArg(getEnvVariable('DEBUG')),

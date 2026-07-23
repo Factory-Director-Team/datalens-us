@@ -22,7 +22,12 @@ const selectedEmbedColumns = [
     EmbedModelColumn.Settings,
 ] as const;
 
-const selectedEmbeddingSecretsColumns = [EmbeddingSecretModelColumn.PublicKey] as const;
+const selectedEmbeddingSecretsColumns = [
+    EmbeddingSecretModelColumn.PublicKey,
+    // Needed to scope the anonymous embedded-entry read to the Embed's workbook (ticket 04): the
+    // token authorizes exactly this Embed's object, so get-entry is pinned to its workbook.
+    EmbeddingSecretModelColumn.WorkbookId,
+] as const;
 
 const selectedEmbedEmbeddingSecretColumns = [
     ...selectedEmbedColumns.map((col) => `${EmbedModel.tableName}.${col}`),

@@ -35,7 +35,7 @@ import {
     selectedTenantColumns,
 } from './constants';
 import type {SelectedEntry, SelectedRevision} from './types';
-import {checkCollectionEntry, checkWorkbookEntry} from './utils';
+import {checkCollectionEntry, checkPublicDashDependency, checkWorkbookEntry} from './utils';
 
 interface GetEntryArgs {
     entryId: string;
@@ -47,6 +47,14 @@ interface GetEntryArgs {
     includeTenantFeatures?: boolean;
     includeFavorite?: boolean;
     includeTenantSettings?: boolean;
+    onlyPublic?: boolean;
+    // On the public-read path, authorizes this entry as a dependency of the given (decoded) public
+    // dashboard id even when the entry itself is not flagged public — ticket 03 (public dashboards).
+    publicDashId?: string;
+    // Set on the anonymous embedded-entry read once an Embed token is validated (ticket 04). Scopes the
+    // lookup to the Embed's workbook and bypasses the tenant / permission / public gates, so a valid
+    // token returns exactly the Embed's (private) object. Mirrors the inert `checkEmbedding` seam.
+    embeddingWorkbookId?: string;
 }
 
 export type GetEntryResult = {
@@ -96,8 +104,24 @@ export const getEntry = async (
     const registry = ctx.get('registry');
     const {DLS} = registry.common.classes.get();
 
-    const {isPrivateRoute, user, onlyPublic, onlyMirrored, isAuditRoute, tenantId} =
+    const {isPrivateRoute, user, onlyPublic: ctxOnlyPublic, onlyMirrored, isAuditRoute, tenantId} =
         ctx.get('info');
+
+    // A dedicated public-read route forces onlyPublic to guarantee only public entries are
+    // returned regardless of the (trusted) caller — see ADR 0002 (US is the authoritative gate).
+    const onlyPublic = args.onlyPublic || ctxOnlyPublic;
+
+    // A dependent chart of a public dashboard is not itself flagged public. On the public-read path,
+    // authorize it via the links graph when the caller passes the public dashboard's id (ticket 03).
+    // Skip when reading the dashboard itself (it passes the public predicate directly).
+    let authorizedAsPublicDashDep = false;
+    if (onlyPublic && args.publicDashId && args.publicDashId !== entryId) {
+        authorizedAsPublicDashDep = await checkPublicDashDependency({
+            trx,
+            entryId,
+            publicDashId: args.publicDashId,
+        });
+    }
 
     const isPrivateOrAuditRoute = isPrivateRoute || isAuditRoute;
 
@@ -123,8 +147,10 @@ export const getEntry = async (
         getEntryBeforeDbRequestHook({ctx, entryId}),
     ]);
 
-    const isEmbedding = checkEmbedding({ctx});
-    const embeddingWorkbookId = getEmbeddingWorkbookId({ctx});
+    // The `embeddingWorkbookId` arg is the fork's direct entry into the embedding path (a validated
+    // Embed token resolved upstream); the registry seams remain for upstream's ctx-driven embedding.
+    const isEmbedding = checkEmbedding({ctx}) || Boolean(args.embeddingWorkbookId);
+    const embeddingWorkbookId = args.embeddingWorkbookId ?? getEmbeddingWorkbookId({ctx});
 
     const graphRelations = ['workbook', 'tenant(tenantModifier)', 'collection(collectionModifier)'];
 
@@ -169,7 +195,9 @@ export const getEntry = async (
                 });
             }
 
-            if (onlyPublic) {
+            // Public-read gate: normally only public entries pass, but a chart authorized as a
+            // dependency of a public dashboard (checked above) is allowed through too.
+            if (onlyPublic && !authorizedAsPublicDashDep) {
                 builder.andWhere({[`${Entry.tableName}.${EntryColumn.Public}`]: true});
             }
 
